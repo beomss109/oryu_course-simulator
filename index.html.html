@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>오류고등학교 1학년 수강신청 시뮬레이터</title>
+  <title>오류고등학교 2025학년도 입학생 수강신청 시뮬레이터</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -183,7 +183,7 @@
 </head>
 
 <body>
-  <h1>오류고등학교 1학년 수강신청 시뮬레이터</h1>
+  <h1>오류고등학교 2025학년도 입학생 수강신청 시뮬레이터</h1>
 <div id="studentInfo">
     <label>학번: <input type="text" id="studentId" style="margin-right:20px;"></label>
     <label>이름: <input type="text" id="studentName"></label>
@@ -195,6 +195,7 @@
   <ul>
     <li>1. 국어, 수학, 영어 영역의 과목 신청 총합은 <strong>57학점</strong>을 초과할 수 없습니다.</li>
     <li>2. 제2외국어, 정보, 교양 영역의 과목 신청 총합은 <strong>12학점 이상</strong> 신청해야 합니다.</li>
+    <li>3. <strong>3학년 과학 진로과목은 2학년 때 선수 과목</strong>을 먼저 이수해야 상위 과목을 선택할 수 있습니다.</li>
   </ul>
 </div>
 <div class="legend">
@@ -220,7 +221,7 @@
         <div class="course-list">
           <div class="course-item fixed course-korean">문학_일(4)</div>
           <div class="course-item fixed course-math">대수_일(4)</div>
-          <div class="course-item fixed course-english">영어1_일(4)</div>
+          <div class="course-item fixed course-english">영어Ⅰ_일(4)</div>
           <div class="course-item fixed course-physical">스포츠생활1_융(2)</div>
         </div>
       </div>
@@ -237,9 +238,9 @@
           <div class="course-item course-science">생명과학_일(4)</div>
           <div class="course-item course-science">물리학_일(4)</div>
           <div class="course-item course-physical">운동과건강_진(4)</div>
-          <div class="course-item course-language">중국어1_일(4)</div>
-          <div class="course-item course-language">일본어1_일(4)</div>
-          <div class="course-item course-language">스페인어1_일(4)</div>
+          <div class="course-item course-language">중국어_일(4)</div>
+          <div class="course-item course-language">일본어_일(4)</div>
+          <div class="course-item course-language">스페인어_일(4)</div>
         </div>
       </div>
       <div class="course-area">
@@ -268,8 +269,8 @@
         <div class="area-title">필수 과목</div>
         <div class="course-list">
           <div class="course-item fixed course-korean">화법과 언어_일(4)</div>
-          <div class="course-item fixed course-math">미적분1_일(4)</div>
-          <div class="course-item fixed course-english">영어2_일(4)</div>
+          <div class="course-item fixed course-math">미적분Ⅰ_일(4)</div>
+          <div class="course-item fixed course-english">영어Ⅱ_일(4)</div>
           <div class="course-item fixed course-physical">스포츠생활2_융(2)</div>
         </div>
       </div>
@@ -290,9 +291,9 @@
           <div class="course-item course-science">전자기와 양자_진(4)</div>
           <div class="course-item course-science">생물의 유전_진(4)</div>
           <div class="course-item course-info">데이터 과학_정(4)</div>
-          <div class="course-item course-language">중국어1_일(4)</div>
-          <div class="course-item course-language">일본어1_일(4)</div>
-          <div class="course-item course-language">스페인어1_일(4)</div>
+          <div class="course-item course-language">중국어_일(4)</div>
+          <div class="course-item course-language">일본어_일(4)</div>
+          <div class="course-item course-language">스페인어_일(4)</div>
           <div class="course-item course-liberal">인간과 심리_진(2)</div>
           <div class="course-item course-liberal">논리와 사고_진(2)</div>
           <div class="course-item course-liberal">보건_진(2)</div>
@@ -317,7 +318,7 @@
         <div class="area-title">선택과목1 (4개 선택)</div>
         <div class="course-list">
           <div class="course-item course-korean">문학과 영상_진(4)</div>
-          <div class="course-item course-math">미적분2_진(4)</div>
+          <div class="course-item course-math">미적분Ⅱ_진(4)</div>
           <div class="course-item course-english">영어독해와 작문_진(4)</div>
           <div class="course-item course-society">사회문제탐구_융(4)</div>
           <div class="course-item course-society">한국지리탐구_진(4)</div>
@@ -428,6 +429,65 @@ const courseLimits = {
   'semester-3-1-선택과목1': 4,
   };
 
+// ✅ 학기 표시명 정의
+// - 학점 계산용 semesterConfigs는 기존 숫자 구조를 그대로 유지합니다.
+// - 경고 문구에 표시할 학기명만 여기에서 따로 관리합니다.
+const semesterLabels = {
+  'semester-2-1': '2학년 1학기',
+  'semester-2-2': '2학년 2학기',
+  'semester-3-1': '3학년 1학기',
+  'semester-3-2': '3학년 2학기'
+};
+
+// ✅ 과목명 정리 함수
+// 예: "물리학_일(4)" → "물리학"
+// 예: "전자기와 양자_진(4)" → "전자기와 양자"
+function getCourseName(courseText) {
+  return courseText.split('_')[0].trim();
+}
+
+// ✅ 선수 과목 위계 정의
+// 과목명만 기준으로 관리하여 "_일(4)", "_진(4)" 같은 세부 표기 변화에 덜 흔들리도록 정리했습니다.
+const coursePrerequisites = {
+  '전자기와 양자': { required: '물리학', semester: 'semester-2-1' },
+  '역학과 에너지': { required: '물리학', semester: 'semester-2-1' },
+  '생물의 유전': { required: '생명과학', semester: 'semester-2-1' },
+  '세포와 물질대사': { required: '생명과학', semester: 'semester-2-1' },
+  '물질과 에너지': { required: '화학', semester: 'semester-2-2' },
+  '화학반응의 세계': { required: '화학', semester: 'semester-2-2' },
+  '지구시스템과학': { required: '지구과학', semester: 'semester-2-2' },
+  '행성우주과학': { required: '지구과학', semester: 'semester-2-2' }
+};
+
+// ✅ 특정 과목의 선수 과목 검사 함수 (과목 선택 시점에 호출)
+function hasPrerequisite(courseText) {
+  const courseName = getCourseName(courseText);
+  const prereq = coursePrerequisites[courseName];
+
+  // 선수 과목이 필요 없는 과목이면 바로 통과
+  if (!prereq) {
+    return { valid: true };
+  }
+
+  // 모든 바구니에서 선택된 과목명을 수집
+  const selectedCourseNames = new Set();
+  document.querySelectorAll('.basket .course-item').forEach(item => {
+    selectedCourseNames.add(getCourseName(item.textContent));
+  });
+
+  // 선수 과목을 선택하지 않은 경우 경고
+  if (!selectedCourseNames.has(prereq.required)) {
+    const semesterName = semesterLabels[prereq.semester] || '선수 과목 개설 학기';
+
+    return {
+      valid: false,
+      message: `${semesterName} '${prereq.required}'을 선택해야 '${courseName}'을 수강할 수 있습니다.`
+    };
+  }
+
+  return { valid: true };
+}
+
 function attachClickHandlers() {
   document.querySelectorAll('.course-item').forEach(item => {
     if (!item.classList.contains('fixed')) {
@@ -456,6 +516,12 @@ function handleCourseClick(item) {
     return;
   }
 
+  // ✅ 과목 선택 시점에 선수 과목 검사
+  const prerequisiteCheck = hasPrerequisite(courseText);
+  if (!prerequisiteCheck.valid) {
+    alert(prerequisiteCheck.message);
+    return;
+  }
 
   const courseArea = item.closest('.course-area');
   const areaTitleText = courseArea?.querySelector('.area-title')?.textContent.trim();
@@ -520,17 +586,22 @@ if (semesterId === 'semester-3-2' && areaTitle === '선택과목1') {
   const credits1 = selectedItems1.map(el =>
     parseInt(el.textContent.match(/\((\d+)\)/)[1])
   );
-  const total1 = credits1.reduce((a, b) => a + b, 0);
-  const num4 = credits1.filter(c => c === 4).length;
-  const num2 = credits1.filter(c => c === 2).length;
 
-  // 총 학점 초과 시 차단
+  const newCredits = [...credits1, credit]; // 현재 클릭한 과목 포함
+  const total1 = newCredits.reduce((a, b) => a + b, 0);
+  const num4 = newCredits.filter(c => c === 4).length;
+  const num2 = newCredits.filter(c => c === 2).length;
+
   if (total1 > 20) {
     alert('3학년 2학기 선택과목1은 최대 20학점까지 선택할 수 있습니다.');
     return;
   }
 
-  // 조합이 조건에 안 맞을 경우 차단
+  if (num2 > 2) {
+    alert('2학점 과목은 최대 2개까지만 선택할 수 있습니다.');
+    return;
+  }
+
   if (total1 === 20) {
     const valid =
       (num4 === 5 && num2 === 0) ||
@@ -661,7 +732,35 @@ function updateTotalAreaSummary() {
   }
 }
 
+// ✅ 진로과목 선택 개수 계산 함수
+function getCareerSubjectCounts() {
+  const counts = {
+    korean: 0,
+    math: 0,
+    english: 0,
+    society: 0,
+    science: 0
+  };
 
+  // 현재 최종 선택된 과목 전체(고정과목 + 바구니 선택과목)
+  const allCourses = document.querySelectorAll('.basket .course-item, .course-item.fixed');
+
+  allCourses.forEach(el => {
+    const text = el.textContent.trim();
+
+    // "_진(" 이 들어간 과목만 진로과목으로 판단
+    const isCareer = /_진\(\d+\)/.test(text);
+    if (!isCareer) return;
+
+    if (el.classList.contains('course-korean')) counts.korean++;
+    if (el.classList.contains('course-math')) counts.math++;
+    if (el.classList.contains('course-english')) counts.english++;
+    if (el.classList.contains('course-society')) counts.society++;
+    if (el.classList.contains('course-science')) counts.science++;
+  });
+
+  return counts;
+}
 
 window.onload = () => {
   attachClickHandlers();
@@ -688,6 +787,7 @@ document.getElementById('save-btn').onclick = () => {
     alert('조건이 충족되지 않았습니다.');
     return;
   }
+
   // 전체 저장 로직 내용이 여기에 있어야 해!
 
   const countedTexts = new Set();
@@ -800,6 +900,51 @@ if (etcCredits < 12) {
 
   titleSection.appendChild(header);
   titleSection.appendChild(info);
+  // ✅ 진로과목 선택 개수 요약 박스 추가
+const careerCounts = getCareerSubjectCounts();
+
+const careerBox = document.createElement('div');
+careerBox.style.marginTop = '10px';
+careerBox.style.padding = '8px 10px';
+careerBox.style.background = '#f5f7fa';
+careerBox.style.border = '1px solid #d9dee5';
+careerBox.style.borderRadius = '8px';
+careerBox.style.fontSize = '12px';
+careerBox.style.lineHeight = '1.6';
+
+const careerTitle = document.createElement('p');
+careerTitle.textContent = '📊 진로과목 선택 현황';
+careerTitle.style.margin = '0 0 6px 0';
+careerTitle.style.fontWeight = 'bold';
+careerTitle.style.fontSize = '13px';
+
+const careerList = document.createElement('div');
+careerList.style.display = 'flex';
+careerList.style.flexWrap = 'wrap';
+careerList.style.gap = '8px';
+
+const careerItems = [
+  `국어 진로과목: ${careerCounts.korean}개`,
+  `수학 진로과목: ${careerCounts.math}개`,
+  `영어 진로과목: ${careerCounts.english}개`,
+  `사회 진로과목: ${careerCounts.society}개`,
+  `과학 진로과목: ${careerCounts.science}개`
+];
+
+careerItems.forEach(text => {
+  const item = document.createElement('span');
+  item.textContent = text;
+  item.style.background = '#ffffff';
+  item.style.border = '1px solid #cfd8dc';
+  item.style.borderRadius = '6px';
+  item.style.padding = '4px 8px';
+  item.style.whiteSpace = 'nowrap';
+  careerList.appendChild(item);
+});
+
+careerBox.appendChild(careerTitle);
+careerBox.appendChild(careerList);
+titleSection.appendChild(careerBox);
   capture.appendChild(titleSection);
 
   Object.keys(semesterConfigs).forEach(id => {
